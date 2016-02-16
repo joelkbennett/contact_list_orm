@@ -4,7 +4,7 @@ require_relative 'contact'
 
 class ContactList
 
-  PAGINATE = 5
+  PER_PAGE = 5
 
   def initialize
     return show_menu if ARGV.empty?
@@ -18,10 +18,11 @@ private
   # Print a list of available commands
   def show_menu
     menu = "\n Available Commands:
-             new\t- Create a new contact
-             list\t- List all contacts
-             show\t- Show a contact
-             search\t- Search contacts\n\n"
+      new\t- Create a new contact
+      list\t- List all contacts
+      show\t- Show a contact
+      search\t- Search contacts\n
+      delete\t- Delete contact\n\n"
     puts menu
   end
 
@@ -31,7 +32,9 @@ private
     when 'list' then show_contacts
     when 'new' then add_contact
     when 'find' then get_contact # TODO: Input check
+    when 'update' then update_contact
     when 'search' then search_contacts
+    when 'delete' then delete_contact
     else 
       puts "\n> Command not recognized"
       show_menu
@@ -40,8 +43,23 @@ private
 
   # Prints all contacts to the console -- I'd prefer to call this all_contacts
   def show_contacts
-    contacts = Contact.all
-    contacts.size <= 5 ? display_contacts(contacts, false) : paginate(contacts, PAGINATE)
+    page = 0
+    contacts = Contact.all(page, PER_PAGE)
+    display_contacts(contacts, false)
+    wait_for_enter
+
+    while contacts.count > 0
+      page += 1
+      contacts = Contact.all(page, PER_PAGE)
+      if contacts.count == 0
+        puts 'THE END'
+        return
+      end
+      display_contacts(contacts, false)
+      wait_for_enter
+    end
+
+    # contacts.size <= 5 ? display_contacts(contacts, false) : paginate(contacts, PAGINATE)
   end
 
   # Waits for user input and creates a new contact record
@@ -51,15 +69,16 @@ private
     puts "> Enter contact email:"
     email = STDIN.gets.chomp
     if Contact.uniq_email?(email)
-      phone_nums = []
-      puts "> Would you like to add a phone number? Y/N"
-      add_num = STDIN.gets.chomp.downcase
-      while add_num == 'y' do
-        (phone_nums << add_phone_number)
-        puts "> Add another? Y/N"
-        add_num = STDIN.gets.chomp
-      end
-      Contact.create(name, email, phone_nums)
+      # TODO: Re-implement multiple phone numbers
+      # phone_nums = []
+      # puts "> Would you like to add a phone number? Y/N"
+      # add_num = STDIN.gets.chomp.downcase
+      # while add_num == 'y' do
+      #   (phone_nums << add_phone_number)
+      #   puts "> Add another? Y/N"
+      #   add_num = STDIN.gets.chomp
+      # end
+      Contact.create(name, email)
       puts "> #{name} successfully added to contact list"
     else
       puts "> #{email} already exists! Contact not added"
@@ -69,7 +88,22 @@ private
   # Takes ID and display contact if it exists
   def get_contact
     contact = Contact.find(@arg)
-    puts contact.nil? ? "> Contact not found" : " #{contact[1]} (#{contact[2]})"
+    puts contact.nil? ? "> Contact not found" : " #{contact.name} (#{contact.email})"
+  end
+
+  def update_contact
+    contact = Contact.find(@arg)
+    puts " #{contact.id}: #{contact.name} (#{contact.email})"
+    # puts in some asks for these, or CHOOSE A FIELD TO UPDATE
+    puts "Update Name:"
+    contact.name = STDIN.gets.chomp
+    puts "Update Email:"
+    contact.email = STDIN.gets.chomp
+    contact.save
+  end
+
+  def delete_contact
+    Contact.destroy(@arg)
   end
 
   # Takes user input and searches contact list. Outputs all unique entries
@@ -81,8 +115,7 @@ private
   # Takes an array of contacts and a Boolean if paginated and formats the output
   def display_contacts(contacts, paginated)
     contacts.each do |contact| 
-      contact_str = " %{id}: %{name} (%{email}), (%{phone})"
-      puts contact_str % contact
+      puts " #{contact.id}: #{contact.name} (#{contact.email})"
     end
     puts "---\n #{contacts.size} records total\n\n" unless paginated
   end
@@ -96,51 +129,51 @@ private
   end
 
   # Take an array of contacts and paginates through them; returns nil
-  def paginate(contacts, num_per_page)
-    system "clear"
-    pages = contacts.each_slice(num_per_page).to_a
+  # def paginate(contacts, num_per_page)
+  #   system "clear"
+  #   pages = contacts.each_slice(num_per_page).to_a
 
-    # # TODO: Future feature - Add forward and back navigation
-    last_page = pages.count
-    current_page = 0
+  #   # # TODO: Future feature - Add forward and back navigation
+  #   last_page = pages.count
+  #   current_page = 0
     
-    puts "> Page #{current_page + 1} of #{last_page}\n\n"
+  #   puts "> Page #{current_page + 1} of #{last_page}\n\n"
 
-    # Display the first page
-    page = pages[current_page]
-    display_contacts(page, true)
+  #   # Display the first page
+  #   page = pages[current_page]
+  #   display_contacts(page, true)
 
-    # Wait for initial input; Only go forward
-    puts"\n> Hit N for next page anything else to quit"
-    page_input = STDIN.gets.chomp
-    while page_input.downcase != 'q'
-      system('clear')
-      # Display the previous page
-      if page_input.downcase == 'p'
-        current_page -= 1
-        return if current_page < 0
-        page = pages[current_page]
-        puts "> Page #{current_page + 1} of #{pages.count}\n\n"
-        display_contacts(page, true)
-        puts"\n> Hit N for next page, P for previous page or Q quit"
-        page_input = STDIN.gets.chomp
-      # Display the next page on all other input
-      elsif page_input.downcase == 'n'
-        current_page += 1
-        return if current_page >= last_page
-        page = pages[current_page]
-        puts "> Page #{current_page + 1} of #{pages.count}\n\n"
-        display_contacts(page, true)
-        puts"\n> Hit N for next page, P for previous page or Q to quit"
-        page_input = STDIN.gets.chomp
-      end
-    end
-    show_exit_message 
-  end
+  #   # Wait for initial input; Only go forward
+  #   puts"\n> Hit N for next page anything else to quit"
+  #   page_input = STDIN.gets.chomp
+  #   while page_input.downcase != 'q'
+  #     system('clear')
+  #     # Display the previous page
+  #     if page_input.downcase == 'p'
+  #       current_page -= 1
+  #       return if current_page < 0
+  #       page = pages[current_page]
+  #       puts "> Page #{current_page + 1} of #{pages.count}\n\n"
+  #       display_contacts(page, true)
+  #       puts"\n> Hit N for next page, P for previous page or Q quit"
+  #       page_input = STDIN.gets.chomp
+  #     # Display the next page on all other input
+  #     elsif page_input.downcase == 'n'
+  #       current_page += 1
+  #       return if current_page >= last_page
+  #       page = pages[current_page]
+  #       puts "> Page #{current_page + 1} of #{pages.count}\n\n"
+  #       display_contacts(page, true)
+  #       puts"\n> Hit N for next page, P for previous page or Q to quit"
+  #       page_input = STDIN.gets.chomp
+  #     end
+  #   end
+  #   show_exit_message 
+  # end
 
-  def show_exit_message
-    puts "\n> Bye!\n\n"
-  end
+  # def show_exit_message
+  #   puts "\n> Bye!\n\n"
+  # end
 
   # Waits for input from from the user before continuing; returns the input
   def wait_for_enter
