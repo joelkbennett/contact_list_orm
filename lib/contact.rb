@@ -54,9 +54,13 @@ class Contact
 
   # Returns the contact with the specified id. If no contact has the id, returns nil.
   def self.find(id)
-    result = CONN.exec_params('SELECT * FROM contact WHERE id=$1 LIMIT 1;', [id])
-    contact = result[0]
-    Contact.new(contact['name'], contact['email'], contact['id'])
+    begin
+      result = CONN.exec_params('SELECT * FROM contact WHERE id=$1 LIMIT 1;', [id])
+      contact = result[0]
+      Contact.new(contact['name'], contact['email'], contact['id'])
+    rescue IndexError
+      "ID does not exist!"
+    end
   end
 
   # Returns an array of contacts who match the given term.

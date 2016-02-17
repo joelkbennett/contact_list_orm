@@ -116,14 +116,18 @@ private
 
   # Takes an array of contacts and a Boolean if paginated and formats the output
   def display_contacts(contacts, paginated)
-    puts "\n ID \t NAME \t\t EMAIL".colorize(:yellow)
-    contacts.each do |contact| 
-      puts "------------------------------------------------------------"
-      puts " #{contact.id}\t #{contact.name}\t (#{contact.email})".colorize(:green)
-      numbers = contact.phone.each { |el| puts " #{el.label}: #{el.number}"}
+    begin
+      puts "\n ID \t NAME \t\t EMAIL".colorize(:yellow)
+      contacts.each do |contact| 
+        puts "------------------------------------------------------------"
+        puts " #{contact.id}\t #{contact.name}\t (#{contact.email})".colorize(:green)
+        numbers = contact.phone.each { |el| puts " #{el.label}: #{el.number}"}
+      end
+      puts "============================================================"
+      puts " #{contacts.size} records shown\n\n".colorize(:yellow ) unless paginated
+    rescue NoMethodError
+      "> ID does not exists!\n\n".colorize(:red)
     end
-    puts "============================================================"
-    puts " #{contacts.size} records shown\n\n".colorize(:yellow ) unless paginated
   end
 
   # Takes a contact_id and adds a new PhoneNumber object
