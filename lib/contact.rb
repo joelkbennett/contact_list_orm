@@ -1,9 +1,10 @@
 require 'pg'
+# require_relative 'phone_number'
 
 # Represents a person in an address book.
 class Contact
 
-  attr_accessor :name, :email
+  attr_accessor :name, :email, :phone
   # Will be nil for a new object - data not stored in the db yet
   attr_reader :id
 
@@ -18,8 +19,8 @@ class Contact
   def initialize(name, email, id=nil)
     @name = name
     @email = email
-    @id = id # default nil
-    # @phone = phone
+    @id = id
+    @phone = PhoneNumber.find(id)
   end
 
   # test to see if the object has been saved, based on the whether id is nil or not
@@ -32,7 +33,6 @@ class Contact
     if persisted?
       CONN.exec_params("UPDATE contact SET name = $1, email = $2 WHERE id = $3;", [name, email, @id])
     else
-      # Is this redundant? What of .create?
       result = CONN.exec_params("INSERT INTO contact (name, email) VALUES ($1, $2) RETURNING id;", [name, email])
       @id = result[0]['id'].to_i
     end
@@ -40,11 +40,7 @@ class Contact
 
   def self.destroy(id)
     CONN.exec_params("DELETE FROM contact WHERE id = $1", [id])
-    # Don used self.garbage_collection for this -- I think this is wrong
-    # THat is, to destory the object instance
   end
-
-  # DEFS: create, all, find, filter, destroy, save
 
   # Takes an Integer page_num for OFFSET and Integer per_page for LIMIT
   # Returns an Array of Contacts loaded from the database.
@@ -59,7 +55,6 @@ class Contact
 
   # Creates a new contact, adding it to the database, returning the new contact.
   def self.create(name, email)
-    # Sanitize data; use exec_params
     result = CONN.exec_params("INSERT INTO contact (name, email) VALUES ($1, $2) RETURNING id;", [name, email])
     contact = self.new(name, email, result[0]['id'].to_i)
   end
@@ -69,13 +64,6 @@ class Contact
     result = CONN.exec_params('SELECT * FROM contact WHERE id=$1 LIMIT 1;', [id])
     contact = result[0]
     Contact.new(contact['name'], contact['email'], contact['id'])
-  end
-
-  # Look into the problem with the key, value inputs here; use string interp for key; but 
-  # find a better way
-  def self.where(key, value)
-    result = CONN.exec_param('SELECT * FROM contact WHERE $1=$2;', [key, value])
-    # CALL THE PROCESS METHOD
   end
 
   # Returns an array of contacts who match the given term.

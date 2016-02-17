@@ -1,10 +1,12 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    colorize (0.7.7)
     pg (0.18.4)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
+  colorize
   pg

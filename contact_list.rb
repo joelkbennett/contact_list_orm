@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby 
 
-require_relative 'contact'
+require_relative 'lib/contact'
+require_relative 'lib/phone_number'
+require 'colorize'
 
 class ContactList
 
@@ -41,7 +43,7 @@ private
     end
   end
 
-  # Prints all contacts to the console -- I'd prefer to call this all_contacts
+  # Prints all contacts to the console
   def show_contacts
     page = 0
     contacts = Contact.all(page, PER_PAGE)
@@ -52,43 +54,33 @@ private
       page += 1
       contacts = Contact.all(page, PER_PAGE)
       if contacts.count == 0
-        puts 'THE END'
+        puts " BYE!\n".colorize(:green)
         return
       end
       display_contacts(contacts, false)
       wait_for_enter
     end
-
-    # contacts.size <= 5 ? display_contacts(contacts, false) : paginate(contacts, PAGINATE)
   end
 
   # Waits for user input and creates a new contact record
   def add_contact
-    puts "> Enter contact name:"
+    puts "\n> Enter contact name:".colorize(:yellow)
     name = STDIN.gets.chomp
-    puts "> Enter contact email:"
+    puts "\n> Enter contact email:".colorize(:yellow)
     email = STDIN.gets.chomp
     if Contact.uniq_email?(email)
-      # TODO: Re-implement multiple phone numbers
-      # phone_nums = []
-      # puts "> Would you like to add a phone number? Y/N"
-      # add_num = STDIN.gets.chomp.downcase
-      # while add_num == 'y' do
-      #   (phone_nums << add_phone_number)
-      #   puts "> Add another? Y/N"
-      #   add_num = STDIN.gets.chomp
-      # end
-      Contact.create(name, email)
-      puts "> #{name} successfully added to contact list"
+      contact = Contact.create(name, email)
+      add_phone_number(contact.id)
+      puts "\n> #{name} successfully added to contact list\n".colorize(:green)
     else
-      puts "> #{email} already exists! Contact not added"
+      puts "\n> #{email} already exists! Contact not added\n\n".colorize(:red)
     end
   end
 
   # Takes ID and display contact if it exists
   def get_contact
-    contact = Contact.find(@arg)
-    puts contact.nil? ? "> Contact not found" : " #{contact.name} (#{contact.email})"
+    contact = [Contact.find(@arg)]
+    puts contact.nil? ? "> Contact not found" : display_contacts(contact, false)
   end
 
   def update_contact
@@ -114,70 +106,34 @@ private
 
   # Takes an array of contacts and a Boolean if paginated and formats the output
   def display_contacts(contacts, paginated)
+    puts "\n ID \t NAME \t\t EMAIL".colorize(:yellow)
     contacts.each do |contact| 
-      puts " #{contact.id}: #{contact.name} (#{contact.email})"
+      puts "------------------------------------------------------------"
+      puts " #{contact.id}\t #{contact.name}\t (#{contact.email})".colorize(:green)
+      numbers = contact.phone.each { |el| puts " #{el.label}: #{el.number}"}
     end
-    puts "---\n #{contacts.size} records total\n\n" unless paginated
+    puts "============================================================"
+    puts " #{contacts.size} records shown\n\n".colorize(:yellow) unless paginated
   end
 
-  def add_phone_number
-    puts "> Phone Type (Home/Work/Mobile)"
-    type = STDIN.gets.chomp.to_sym
-    puts "> Phone Number"
-    number = STDIN.gets.chomp
-    {type => number}
+  def add_phone_number(contact_id)
+    puts " > Would you like to add a phone number? (y/n)".colorize(:yellow)
+    input = STDIN.gets.chomp.downcase
+    while input == 'y'
+      puts "\n> Phone Type (Home/Work/Mobile)".colorize(:yellow)
+      label = STDIN.gets.chomp
+      puts "\n> Phone Number".colorize(:yellow)
+      number = STDIN.gets.chomp
+      PhoneNumber.create(label, number, contact_id)
+
+      puts "\nAdd another? (y/n)".colorize(:yellow)
+      input = STDIN.gets.chomp.downcase
+    end
   end
-
-  # Take an array of contacts and paginates through them; returns nil
-  # def paginate(contacts, num_per_page)
-  #   system "clear"
-  #   pages = contacts.each_slice(num_per_page).to_a
-
-  #   # # TODO: Future feature - Add forward and back navigation
-  #   last_page = pages.count
-  #   current_page = 0
-    
-  #   puts "> Page #{current_page + 1} of #{last_page}\n\n"
-
-  #   # Display the first page
-  #   page = pages[current_page]
-  #   display_contacts(page, true)
-
-  #   # Wait for initial input; Only go forward
-  #   puts"\n> Hit N for next page anything else to quit"
-  #   page_input = STDIN.gets.chomp
-  #   while page_input.downcase != 'q'
-  #     system('clear')
-  #     # Display the previous page
-  #     if page_input.downcase == 'p'
-  #       current_page -= 1
-  #       return if current_page < 0
-  #       page = pages[current_page]
-  #       puts "> Page #{current_page + 1} of #{pages.count}\n\n"
-  #       display_contacts(page, true)
-  #       puts"\n> Hit N for next page, P for previous page or Q quit"
-  #       page_input = STDIN.gets.chomp
-  #     # Display the next page on all other input
-  #     elsif page_input.downcase == 'n'
-  #       current_page += 1
-  #       return if current_page >= last_page
-  #       page = pages[current_page]
-  #       puts "> Page #{current_page + 1} of #{pages.count}\n\n"
-  #       display_contacts(page, true)
-  #       puts"\n> Hit N for next page, P for previous page or Q to quit"
-  #       page_input = STDIN.gets.chomp
-  #     end
-  #   end
-  #   show_exit_message 
-  # end
-
-  # def show_exit_message
-  #   puts "\n> Bye!\n\n"
-  # end
 
   # Waits for input from from the user before continuing; returns the input
   def wait_for_enter
-    puts "\n> Press Enter key to continue"
+    puts "> Press Enter key to continue".colorize(:red)
     STDIN.gets.chomp
   end
 end
