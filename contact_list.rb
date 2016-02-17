@@ -23,7 +23,8 @@ private
       new\t- Create a new contact
       list\t- List all contacts
       show\t- Show a contact
-      search\t- Search contacts\n
+      update\t- Update a contact
+      search\t- Search contacts
       delete\t- Delete contact\n\n"
     puts menu
   end
@@ -85,12 +86,15 @@ private
 
   def update_contact
     contact = Contact.find(@arg)
-    puts " #{contact.id}: #{contact.name} (#{contact.email})"
-    # puts in some asks for these, or CHOOSE A FIELD TO UPDATE
-    puts "Update Name:"
-    contact.name = STDIN.gets.chomp
-    puts "Update Email:"
-    contact.email = STDIN.gets.chomp
+    display_contacts([contact], false)
+    puts " > Update Name:".colorize(:yellow)
+    new_name = STDIN.gets.chomp
+    contact.name = new_name unless new_name.empty?
+
+    puts "\n > Update Email:".colorize(:yellow)
+    new_email = STDIN.gets.chomp
+    contact.email = new_email unless new_email.empty?
+
     contact.save
   end
 
@@ -113,7 +117,7 @@ private
       numbers = contact.phone.each { |el| puts " #{el.label}: #{el.number}"}
     end
     puts "============================================================"
-    puts " #{contacts.size} records shown\n\n".colorize(:yellow) unless paginated
+    puts " #{contacts.size} records shown\n\n".colorize(:yellow ) unless paginated
   end
 
   def add_phone_number(contact_id)
