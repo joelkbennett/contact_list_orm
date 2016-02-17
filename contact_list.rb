@@ -1,8 +1,9 @@
 #!/usr/bin/env ruby 
 
+require 'pg'
+require 'colorize'
 require_relative 'lib/contact'
 require_relative 'lib/phone_number'
-require 'colorize'
 
 class ContactList
 
@@ -87,6 +88,7 @@ private
   def update_contact
     contact = Contact.find(@arg)
     display_contacts([contact], false)
+
     puts " > Update Name:".colorize(:yellow)
     new_name = STDIN.gets.chomp
     contact.name = new_name unless new_name.empty?
@@ -94,7 +96,6 @@ private
     puts "\n > Update Email:".colorize(:yellow)
     new_email = STDIN.gets.chomp
     contact.email = new_email unless new_email.empty?
-
     contact.save
   end
 
@@ -120,6 +121,7 @@ private
     puts " #{contacts.size} records shown\n\n".colorize(:yellow ) unless paginated
   end
 
+  # Takes a contact_id and adds a new PhoneNumber object
   def add_phone_number(contact_id)
     puts " > Would you like to add a phone number? (y/n)".colorize(:yellow)
     input = STDIN.gets.chomp.downcase

@@ -1,14 +1,8 @@
-require 'pg'
-# require_relative 'phone_number'
-
-# Represents a person in an address book.
 class Contact
 
   attr_accessor :name, :email, :phone
-  # Will be nil for a new object - data not stored in the db yet
   attr_reader :id
 
-  # TODO: PG::Connection.new({options}) -- look into the difference
   CONN = PG.connect(
     host: 'localhost',
     dbname: 'contact_list',
@@ -42,8 +36,7 @@ class Contact
     CONN.exec_params("DELETE FROM contact WHERE id = $1", [id])
   end
 
-  # Takes an Integer page_num for OFFSET and Integer per_page for LIMIT
-  # Returns an Array of Contacts loaded from the database.
+  # Takes an Integer page_num for OFFSET and Integer per_page for LIMIT. Returns an Array of Contacts loaded from the database.
   def self.all(page_index, per_page)
     contacts = []
     offset = page_index * per_page
@@ -79,5 +72,20 @@ class Contact
   def self.uniq_email?(email)
     result = CONN.exec_params('SELECT email FROM contact WHERE email = $1 LIMIT 1;', [email])
     true if result.count == 0
+  end
+
+  # Takes a String email and returns matching records
+  def self.find_by_email(email)
+    self.where('email', email)
+  end
+
+  # Takes a String name and returns matching records
+  def self.find_by_name(name)
+    self.where('name', name)
+  end
+
+  # Takes Strings key, value and returns matching records
+  def self.where(key, value)
+    CONN.exec_params("SELECT * FROM contact WHERE #{key} = $1;", [value])
   end
 end
