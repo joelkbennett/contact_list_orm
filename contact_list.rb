@@ -13,6 +13,11 @@ class ContactList
     return show_menu if ARGV.empty?
     @command = ARGV[0]
     @arg = ARGV[1] unless ARGV[1] == nil
+    puts "\n============================================================".colorize(:yellow)
+    puts "============================================================".colorize(:yellow)
+    puts "=======================".colorize(:yellow) + " CONTACT LIST ".colorize(:green) + "=======================".colorize(:yellow)
+    puts "============================================================".colorize(:yellow)
+    puts "============================================================".colorize(:yellow)
     check_command
   end
 
@@ -89,11 +94,11 @@ private
     contact = Contact.find(@arg)
     display_contacts([contact], false)
 
-    puts " > Update Name:".colorize(:yellow)
+    puts "> Update Name:".colorize(:yellow)
     new_name = STDIN.gets.chomp
     contact.name = new_name unless new_name.empty?
 
-    puts "\n > Update Email:".colorize(:yellow)
+    puts "\n> Update Email:".colorize(:yellow)
     new_email = STDIN.gets.chomp
     contact.email = new_email unless new_email.empty?
     contact.save
@@ -123,7 +128,7 @@ private
 
   # Takes a contact_id and adds a new PhoneNumber object
   def add_phone_number(contact_id)
-    puts " > Would you like to add a phone number? (y/n)".colorize(:yellow)
+    puts "> Would you like to add a phone number? (y/n)".colorize(:yellow)
     input = STDIN.gets.chomp.downcase
     while input == 'y'
       puts "\n> Phone Type (Home/Work/Mobile)".colorize(:yellow)
